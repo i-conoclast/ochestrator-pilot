@@ -1,0 +1,65 @@
+# Orchestra CLI Configuration
+version: "1.0"
+
+policies:
+  allow_network: false
+  default_fs_mode: "read-only"
+  max_task_duration_sec: 300
+  max_total_duration_sec: 1800
+
+whitelist_tools:
+  - echo
+  - ls
+  - cat
+  - node
+  - pnpm
+  - git
+
+llm:
+  backend: "claude_code"
+  model: "claude-sonnet-4-5-20250929"
+  prompts:
+    planner: |
+      You are L2 Coordinator. Given this task:
+      {intent}
+
+      Constraints: {constraints}
+
+      Produce a JSON array of sub-tasks with dependencies. Each task must:
+      - have unique task_id
+      - specify tools from whitelist: {whitelist_tools}
+      - declare dependencies (parent_id or depends_on[])
+
+      Output only valid JSON, no explanation.
+    summarizer: |
+      You are L1 Orchestrator. Summarize this run:
+      Tasks: {tasks_summary}
+      Artifacts: {artifacts_list}
+
+      Produce a concise Markdown report.
+
+retries:
+  max: 2
+  backoff_base_sec: 2
+
+concurrency:
+  max_workers: 4
+
+paths:
+  runs: "./runs"
+  logs: "./runs/{run_id}/tasks.jsonl"
+  artifacts: "./runs/{run_id}/artifacts"
+  report: "./runs/{run_id}/report.md"
+
+security:
+  fs:
+    allow_read: ["./", "/tmp"]
+    allow_write: ["./runs"]
+  net:
+    allow_domains: []
+  redact_secrets: true
+
+telemetry:
+  level: "info"
+  format: "jsonl"
+  trace_id_header: "X-Orchestra-Trace-ID"
