@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { log, setTraceId } from '../logger/index.js';
-import { v4 as uuid } from 'uuid';
+import { runCommand, agentCommand, evalCommand } from './commands.js';
 
 const program = new Command();
 
@@ -20,51 +19,34 @@ program
   .option('--concurrency <n>', 'Parallel worker count', '1')
   .option('--out <path>', 'Run directory path', './runs')
   .option('--config <path>', 'Configuration file', './orchestra.config.yaml')
-  .action((task: string, options: any) => {
-    const runId = uuid();
-    setTraceId(runId);
-
-    log('info', 'Orchestra CLI started', {
-      task,
-      run_id: runId,
-      options,
-    });
-
-    console.log('🎭 Orchestra CLI v0.1.0');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📋 Task: ${task}`);
-    console.log(`📂 Run ID: ${runId}`);
-    console.log('');
-
-    if (options.planOnly) {
-      console.log('ℹ️  Plan-only mode enabled');
-    }
-
-    if (options.dryRun) {
-      console.log('ℹ️  Dry-run mode enabled');
-    }
-
-    console.log('');
-    console.log('⚠️  Core orchestration logic not yet implemented');
-    console.log('💡 This is a minimal CLI stub for Day 1-2 setup');
-
-    log('info', 'CLI execution completed (stub mode)');
-  });
+  .action(runCommand);
 
 program
   .command('agent')
   .description('Manage agents')
   .action(() => {
-    console.log('Agent management commands:');
-    console.log('  orchestra agent ls       - List all agents');
-    console.log('  orchestra agent inspect  - Inspect agent details');
+    console.log('Agent commands:');
+    console.log('  orchestra agent ls              - List all agents');
+    console.log('  orchestra agent inspect <level> - Inspect agent details');
   });
 
 program
+  .command('agent')
+  .command('ls')
+  .description('List all agents')
+  .action(agentCommand.list);
+
+program
+  .command('agent')
+  .command('inspect <level>')
+  .description('Inspect agent details')
+  .action(agentCommand.inspect);
+
+program
   .command('eval')
-  .description('Run evaluation scenarios')
-  .action(() => {
-    console.log('Evaluation framework not yet implemented');
-  });
+  .command('run <scenario>')
+  .description('Run evaluation scenario')
+  .option('--report <format>', 'Report format (md|json)', 'md')
+  .action(evalCommand.run);
 
 program.parse();
